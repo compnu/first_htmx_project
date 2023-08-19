@@ -1,0 +1,12 @@
+{% for film in films %}
+    <tr>
+        <td class="border">{{ film.name }}</td>
+        <td class="border">{{ film.director }}</td>
+        <td class="border"> 
+            <small>
+                <a href="edit">Edit</a>
+                <a href="delete">Delete</a>
+            </small>
+        </td>
+    </tr>
+{% endfor %}
