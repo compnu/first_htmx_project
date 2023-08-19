@@ -71,23 +71,38 @@ async def movielist(
 
 
 @app.get("/", response_class=HTMLResponse)
-async def movielist(request: Request, hx_request: Optional[str] = Header(None)):
-    films = [
-        {'name': 'Blade Runner', 'director': 'Ridley Scott'},
-        {'name': 'Pulp Fiction', 'director': 'Quentin Tarantino'},
-        {'name': 'Mulholland Drive', 'director': 'David Lynch'},
-    ]
+async def movielist(
+    request: Request, 
+    hx_request: Optional[str] = Header(None), 
+    db: Session = Depends(crud.get_db)
+    ):
+    
+    films = await crud.get_all_movies(db= db)
     context = {"request": request, 'films': films}
     if hx_request:
         return templates.TemplateResponse("partials/table.html", context)
     return templates.TemplateResponse("index.html", context)
 
+
 @app.post('/add-film/', response_class=HTMLResponse)
-async def add_film(request: Request, title: Annotated[str, Form()], director: Annotated[str, Form()]): 
-    data = [
-        {'name': title, 'director': director},
-    ]
-    context = {'request': request, 'films': data}
+async def add_film(
+    request: Request, 
+    title: Annotated[str, Form()], 
+    director: Annotated[str, Form()],
+    db: Session = Depends(crud.get_db),
+    ): 
+    
+    movie = await crud.add_movie(
+        db=db,
+        movie= schemas.MovieCreate(film_name=title, director=director)
+    )
+    
+    
+    films = [movie.model_dump()]
+    
+    print(films)
+    
+    context = {'request': request, 'films': films}
     return templates.TemplateResponse('/partials/table.html', context=context)
 
 

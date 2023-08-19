@@ -30,6 +30,7 @@ class Movie(Base):
     
     film_name: Mapped[str]
     director: Mapped[Optional[str]]
+    # comment: Mapped[Optional[str]]
     
     owner = relationship("User", back_populates="films")
 

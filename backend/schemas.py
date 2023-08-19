@@ -19,17 +19,18 @@ class User(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: int   
         
-class CallBase(BaseModel):
+class MovieBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    fund_name: str
+    film_name: str
+    director: Optional[str]
     
     
-class CallCreate(CallBase):
+class MovieCreate(MovieBase):
     pass
 
 
-class Call(CallBase):
+class Movie(MovieBase):
     id: int
     owner_id: int
     
-    call_number: Optional[str]
+    # comment: Optional[str]

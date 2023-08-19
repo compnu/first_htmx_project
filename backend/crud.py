@@ -73,3 +73,17 @@ async def get_current_user(
         )
 
     return schemas.User.model_validate(user)
+
+
+async def add_movie(db: Session, movie: schemas.MovieCreate):
+    movie = models.Movie(**movie.model_dump(), owner_id = 1)
+    db.add(movie)
+    db.commit()
+    db.refresh(movie)
+    return schemas.MovieCreate.model_validate(movie)
+
+
+async def get_all_movies(db: Session):
+    movies = db.query(models.Movie).all()
+    
+    return list(map(schemas.Movie.model_validate, movies))
