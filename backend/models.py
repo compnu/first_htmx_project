@@ -16,20 +16,20 @@ class User(Base):
     lastname = Column(String)
     hashed_password = Column(String)
 
-    calls = relationship("Call", back_populates="owner")
+    films = relationship("Movie", back_populates="owner")
 
     def verify_password(self, password: str):
         return bcrypt.verify(password, self.hashed_password)
     
 
-class Call(Base):
-    __tablename__ = "calls"
+class Movie(Base):
+    __tablename__ = "movies"
     id: Mapped[int] = mapped_column(primary_key=True)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('user.id'))
     
     
-    fund_name: Mapped[str]
-    call_number: Mapped[Optional[str]]
+    film_name: Mapped[str]
+    director: Mapped[Optional[str]]
     
-    owner = relationship("User", back_populates="calls")
+    owner = relationship("User", back_populates="films")
 
