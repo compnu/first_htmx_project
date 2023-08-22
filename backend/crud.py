@@ -1,7 +1,12 @@
+from datetime import datetime, timedelta
+from typing import Annotated
+
 from sqlalchemy.orm import Session
-from passlib.hash import bcrypt
-from jwt import encode, decode
-from fastapi import security, Depends, HTTPException
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
 import os
 from dotenv import load_dotenv
 
@@ -12,8 +17,11 @@ load_dotenv()
 
 JWT_SECRET = os.getenv('JWT_SECRET')
 ALGORITHM = os.getenv('ALGORITHM')
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 
-oauth2schema = security.OAuth2PasswordBearer(tokenUrl="/api/token")
+oauth2schema = OAuth2PasswordBearer(tokenUrl="/api/token")
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def create_database():
     return Base.metadata.create_all(bind= engine)
@@ -26,6 +34,19 @@ def get_db():
         db.close()
 
 
+async def get_user_schema(username: str, db: Session):
+    user_db = db.query(models.User).filter(models.User.username == username).first()
+    user = schemas.User(
+        email= user_db.email,
+        username=user_db.username,
+        name=user_db.name,
+        lastname=user_db.lastname,
+        hashed_password = user_db.hashed_password,
+        id= user_db.id
+    )
+    return user
+
+
 async def get_user(username: str, db: Session):
     return db.query(models.User).filter(models.User.username == username).first()
 
@@ -33,10 +54,10 @@ async def get_user(username: str, db: Session):
 async def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         email= user.email,
+        username = user.username, 
         name = user.name,
         lastname = user.lastname,
-        username = user.username, 
-        hashed_password = bcrypt.hash(user.hashed_password)
+        hashed_password = pwd_context.hash(user.hashed_password)
     )
     db.add(db_user)
     db.commit()
@@ -44,12 +65,15 @@ async def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-async def create_token(user: models.User):
-    user_obj = schemas.User.model_validate(user)
-
-    token = encode(user_obj.model_dump(), JWT_SECRET)
-
-    return dict(access_token = token, token_type="bearer")
+async def create_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
+    return encoded_jwt
 
 
 async def authenticate_user(username: str, password: str, db: Session):
@@ -65,18 +89,27 @@ async def authenticate_user(username: str, password: str, db: Session):
 
 
 async def get_current_user(
-    db: Session = Depends(get_db),
-    token: str = Depends(oauth2schema),
+    token: Annotated[str, Depends(oauth2schema)],
+    db:  Annotated[Session, Depends(get_db)]
 ):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
-        payload = decode(token, JWT_SECRET, algorithms=[ALGORITHM])
-        user = db.query(models.User).get(payload["id"])
-    except:
-        raise HTTPException(
-            status_code=401, detail="Invalid Email or Password"
-        )
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = schemas.TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    user = await get_user_schema(username=token_data.username, db=db)
+    if user is None:
+        raise credentials_exception
+    return user
 
-    return schemas.User.model_validate(user)
 
 async def get_movie_by_name_director(film_name: str, director: str, db: Session):
     movie =(

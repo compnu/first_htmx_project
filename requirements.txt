@@ -4,6 +4,5 @@ jinja2
 python-multipart
 pydantic
 sqlalchemy
-passlib
-pyjwt
-bcrypt
+passlib[bcrypt]
+python-jose[cryptography]

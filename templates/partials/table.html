@@ -4,8 +4,13 @@
         <td class="border">{{ film.director }}</td>
         <td class="border"> 
             <small>
-                <a href="edit">Edit</a>
-                <a href="delete">Delete</a>
+                <button hx-get="/movie/{{ film.id }}/edit" class="btn btn-primary">
+                    Edit
+                </button>
+                
+                <button hx-delete="/movie/{{ film.id }}/delete" class="btn btn-primary">
+                    Delete
+                </button>
             </small>
         </td>
     </tr>

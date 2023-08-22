@@ -1,0 +1,18 @@
+{% for film in films %}
+<tr hx-trigger='cancel' class='editing' hx-get="/movie/"{{ film.id }}>
+    <td><input id="film_name{{ film.index }}" name="title" type="text" value="{{ film.film_name }}" ></td>
+    <td><input id="director{{ film.index }}" name="director" type="text" value="{{ film.director }}" ></td>
+    <td>
+      <button class="btn btn-danger" hx-get="/movie/{{ film.id }}">
+        Cancel
+      </button>
+      <button class="btn btn-danger" hx-put="/movie/{{ film.id }}" hx-include="closest tr">
+        Save
+      </button>
+
+      <input id="id{{ film.index }}" type="hidden" name="owner_id" value="{{ film.owner_id }}">
+    </td>
+  </tr>
+{% endfor %}
+
+

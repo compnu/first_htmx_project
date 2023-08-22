@@ -26,7 +26,7 @@
                   <th class="border">Action</th>
                 </tr>
               </thead>
-              <tbody class="text-center text-sm" id="table-body">
+              <tbody class="text-center text-sm" id="table-body" hx-target="closest tr" hx-swap="outerHTML">
                   {% include 'partials/table.html' %}
               </tbody>
         </table>
@@ -37,7 +37,7 @@
 <div class="input-form">
     <h1 class="header-add-film">Add Film</h1>
 
-    <form hx-post="/add-film/" hx-target="#film-list" hx-swap="beforeend" hx-indicator="#spinner">
+    <form >
         <div class="input-title">
             <label for="film-title">Title</label>
             <input type="text" name="title" id="film-title" class="form-control" />
@@ -50,7 +50,7 @@
         <button class="px-3 py-1 bg-blue-600 text-white ml-4"
                 hx-post="/add-film/"
                 hx-target="#table-body"
-                hx-swap="beforeend">Submit</button>
+                hx-swap="afterbegin">Submit</button>
     </form>
 </div>
 

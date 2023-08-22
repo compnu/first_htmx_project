@@ -34,3 +34,12 @@ class Movie(MovieBase):
     owner_id: int
     
     # comment: Optional[str]
+    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None

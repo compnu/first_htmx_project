@@ -2,16 +2,17 @@ from sqlalchemy import Boolean, Column, ForeignKey, String, DateTime, Integer
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from typing import List, Optional
 from datetime import datetime
-from passlib.hash import bcrypt
+from passlib.context import CryptContext
 
 from backend.database import Base
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class User(Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String, unique=True)
     email: Mapped[str] = mapped_column(String, unique=True)
-    username = Column(String)
     name = Column(String)
     lastname = Column(String)
     hashed_password = Column(String)
@@ -19,7 +20,7 @@ class User(Base):
     films = relationship("Movie", back_populates="owner")
 
     def verify_password(self, password: str):
-        return bcrypt.verify(password, self.hashed_password)
+        return pwd_context.verify(password, self.hashed_password)
     
 
 class Movie(Base):
