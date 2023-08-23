@@ -7,53 +7,60 @@
     
 
     <script src="https://unpkg.com/htmx.org@1.6.1"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', path='/index.css') }}" rel="stylesheet">
     <title>FastAPI demo</title>
 </head>
 <body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar-id">
+        <h3 class="sidebar-header">Menu</h3>
+        <a href="#" class="sidebar-item">Link 1</a>
+        <a href="#" class="sidebar-item">Link 2</a>
+        <a href="#" class="sidebar-item">Link 3</a>
+    </div>
 
-<div class="mx-4">
-
-    <p class="text-2xl font-bold mb-4">Movie List</p>
-    
-        <table class="min-w-[50%] mb-4">
-            <thead class="border-b text-lg">
+    <div class="mx-4">
+        <h1>Movie List</h1>   
+        
+        <table class=movie-table>
+            <thead class="movie-table-header">
                 <tr>
                   <th class="border">Film Name</th>
                   <th class="border">Director</th>
                   <th class="border">Action</th>
                 </tr>
               </thead>
-              <tbody class="text-center text-sm" id="table-body" hx-target="closest tr" hx-swap="outerHTML">
+              <tbody class="movie-table-body" id="table-body" 
+                hx-target="closest tr" 
+                hx-swap="outerHTML">
                   {% include 'partials/table.html' %}
               </tbody>
         </table>
-    
-            
-</div>
+    </div>
 
-<div class="input-form">
-    <h1 class=text-2xl font-bold mb-4">Add Film</h1>
 
-    <form >
-        <div class="input-title">
-            <label for="film-title">Title</label>
-            <input type="text" name="title" id="film-title" class="form-control" />
-        </div>
-        <div class="input-director">
-            <label for="film-director">Director</label>
-            <input type="text" name="director" id="film-director" class="form-control" />
-        </div>
+    <div class="input-form">
+        <h1 class=add-film-header>Add Film</h1>
 
-        <button class="px-3 py-1 bg-blue-600 text-white ml-4"
+        <form >
+            <div class="input-title">
+                <label for="film-title">Title</label>
+                <input type="text" name="title" id="film-title" class="form-control" />
+            </div>
+        
+            <div class="input-director">
+                <label for="film-director">Director</label>
+                <input type="text" name="director" id="film-director" class="form-control" />
+            </div>
+
+            <button class="px-3 py-1 bg-blue-600 text-white ml-4"
                 hx-post="/add-film/"
                 hx-target="#table-body"
-                hx-swap="afterbegin">Submit</button>
-    </form>
-</div>
-
+                hx-swap="afterbegin">
+                Submit
+            </button>
+        </form>
+    </div>
 
 </body>
 </html>

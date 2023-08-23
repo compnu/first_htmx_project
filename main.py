@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, Request, Form, Header, Depends, HTTPException, security, status, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -33,6 +33,14 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# class NotAuthenticatedException(Exception):
+#     pass
+
+# @app.exception_handler(NotAuthenticatedException)
+# def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
+#     return RedirectResponse(url='/login')
+
 
 templates = Jinja2Templates(directory="templates")
 
@@ -125,9 +133,10 @@ async def movielist(
     context = {"request": request, 'films': films}
     
     if hx_request:
-        return templates.TemplateResponse("partials/table.html", context)
+        return templates.TemplateResponse("partials/table.html", context=context)
     
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse("index.html", context=context)
+
 
 
 @app.post('/add-film/', response_class=HTMLResponse)
