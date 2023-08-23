@@ -1,26 +1,36 @@
 from datetime import datetime, timedelta
 from typing import Annotated
 
-from fastapi import FastAPI, Request, Form, Header, Depends, HTTPException, security, status
+from fastapi import FastAPI, Request, Form, Header, Depends, HTTPException, security, status, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from typing import Optional
 from sqlalchemy.orm import Session
 
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 import os
 from dotenv import load_dotenv
 
-from backend import crud, models, schemas
+from backend import crud, models, schemas, auth
 from backend.database import SessionLocal, engine
 
 crud.create_database()
 
+load_dotenv()
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -40,8 +50,9 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(crud.get_d
 
 @app.post("/api/token", response_model= schemas.Token)
 async def generate_token(
+    response: Response,
     form_data: Annotated[security.OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(crud.get_db)
+    db: Annotated[Session, Depends(crud.get_db)] 
 ):
     user = await crud.authenticate_user(form_data.username, form_data.password, db)
 
@@ -55,6 +66,11 @@ async def generate_token(
     access_token = await crud.create_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
+    
+    response.set_cookie(
+        key='access_token', value= access_token, httponly=True
+    )
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -64,44 +80,48 @@ async def get_user_me(user: Annotated[schemas.User, Depends(crud.get_current_use
 
 
 @app.get("/login", response_class=HTMLResponse)
-async def movielist(request: Request):
-    return templates.TemplateResponse("login.html", context={'request': request, 'token':''})
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", context={'request': request})
 
 
-@app.post("/auth", response_class=HTMLResponse)
-async def movielist(
-    request: Request, 
-    username: Annotated[str, Form()], 
-    password: Annotated[str, Form()],
-    db: Session = Depends(crud.get_db)
+@app.post("/login", response_class=HTMLResponse, tags=['authenticate'])
+async def login_request(
+    request: Request,
+    db: Annotated[Session, Depends(crud.get_db)]
 ):
-    user = await crud.authenticate_user(username, password, db)
+    form = auth.LoginForm(request=request)
+    await form.load_data()
+        
+    user = await crud.authenticate_user(username=form.username, password=form.password, db=db)
     
     if not user:
        access_token = {'access_token': 'Innvalid username'}
        context = {'request': request, 'token': access_token}
        return templates.TemplateResponse('/partials/token.html', context=context)
     
+    response = templates.TemplateResponse('index.html', context= {'request': request, 'user': user})
+    response.headers['HX-Redirect'] = 'http://127.0.0.1:8000/'
     
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = await crud.create_token(
-    data = {"sub": user.username}, expires_delta=access_token_expires)
-     
-    context = {'request': request, 'token': access_token}
-    
-    return templates.TemplateResponse('/partials/token.html', context=context)
+    await generate_token(response=response, form_data=form, db=db)
+       
+    return response
 
 
 @app.get("/", response_class=HTMLResponse)
 async def movielist(
-    request: Request, 
-    hx_request: Optional[str] = Header(None), 
-    db: Session = Depends(crud.get_db)
+    request: Request,
+    db: Annotated[Session, Depends(crud.get_db)],
+    hx_request: Optional[str] = Header(None),
     ):
     
-    films = await crud.get_all_movies(db = db)
+    token = request.cookies.get('access_token')
     
-    films.reverse()    
+    # Authentication
+    await crud.get_current_user(token=token, db=db)
+    
+    films = await crud.get_all_movies(db = db)
+    films.reverse()
+    
     context = {"request": request, 'films': films}
     
     if hx_request:
@@ -112,15 +132,19 @@ async def movielist(
 
 @app.post('/add-film/', response_class=HTMLResponse)
 async def add_film(
-    request: Request, 
-    title: Annotated[str, Form()], 
-    director: Annotated[str, Form()],
+    request: Request,
     db: Session = Depends(crud.get_db),
     ): 
     
+    data = await request.form()
+    
+    token = request.cookies.get('access_token')
+    user = await crud.get_current_user(token=token, db=db)
+    
     movie = await crud.add_movie(
+        owner_id= user.id,
         db=db,
-        movie = schemas.MovieCreate(film_name=title, director=director)
+        movie = schemas.MovieCreate(film_name=data['title'], director=data['director'])
     )
       
     context = {'request': request, 'films': [movie]}
@@ -131,13 +155,11 @@ async def add_film(
 async def get_movie(
     request: Request,
     movie_id: int,
-    db: Session = Depends(crud.get_db)
+    db: Annotated[Session, Depends(crud.get_db)]
     ):
     movie =  await crud.get_movie(movie_id=movie_id, db=db)
     
-    films = [movie.model_dump()]
-    
-    context = {'request': request, 'films': films}
+    context = {'request': request, 'films': [movie]}
     return templates.TemplateResponse('/partials/table.html', context=context)
 
 
@@ -164,12 +186,9 @@ async def get_movie(
     movie_id: int,
     db: Session = Depends(crud.get_db)
     ):
-    movie =  await crud.get_movie(movie_id=movie_id, db=db)
+    movie =  await crud.get_movie(movie_id=movie_id, db=db)  
     
-    films = [movie.model_dump()]
-    
-    
-    context = {'request': request, 'films': films}
+    context = {'request': request, 'films': [movie]}
     return templates.TemplateResponse('/partials/table_edit.html', context=context)
 
 

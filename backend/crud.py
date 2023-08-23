@@ -71,8 +71,10 @@ async def create_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
+    
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
+    
     return encoded_jwt
 
 
@@ -100,14 +102,20 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        
         if username is None:
             raise credentials_exception
+        
         token_data = schemas.TokenData(username=username)
+    
     except JWTError:
         raise credentials_exception
+    
     user = await get_user_schema(username=token_data.username, db=db)
+    
     if user is None:
         raise credentials_exception
+    
     return user
 
 
@@ -119,23 +127,24 @@ async def get_movie_by_name_director(film_name: str, director: str, db: Session)
         .first()
     )
     
-    return schemas.Movie.model_validate(movie)
+    return movie
 
 
-async def add_movie(db: Session, movie: schemas.MovieCreate):
-    movie = models.Movie(**movie.model_dump(), owner_id = 1)
+async def add_movie(owner_id: int, db: Session, movie: schemas.MovieCreate):
+    movie = models.Movie(**movie.model_dump(), owner_id = owner_id)
     db.add(movie)
     db.commit()
     db.refresh(movie)
     
     movie_db = await get_movie_by_name_director(film_name= movie.film_name, director= movie.director, db=db)
-    return schemas.Movie.model_validate(movie_db)
+    return movie_db
 
 
 async def get_all_movies(db: Session):
     movies = db.query(models.Movie).all()
     
-    return list(map(schemas.Movie.model_validate, movies))
+    return movies
+    # return list(map(schemas.Movie.model_validate, movies))
 
 
 async def movie_selector(movie_id: int, db: Session):
@@ -152,8 +161,8 @@ async def movie_selector(movie_id: int, db: Session):
 
 async def get_movie(movie_id: int, db: Session):
     movie = await movie_selector(movie_id=movie_id, db=db)
-    
-    return schemas.Movie.model_validate(movie)
+    return movie
+    # return schemas.Movie.model_validate(movie)
 
 
 async def delete_movie(movie_id: int, db: Session):
@@ -172,4 +181,5 @@ async def update_movie(movie_id: int, movie: schemas.MovieCreate, db: Session):
     db.commit()
     db.refresh(movie_db)
     
-    return schemas.Movie.model_validate(movie_db)
+    return movie_db
+    # return schemas.Movie.model_validate(movie_db)

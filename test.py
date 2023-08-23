@@ -1,7 +1,27 @@
-from backend import crud, models, schemas
+import requests
 
-user = crud.get_user(username='bh', db=crud.get_db())
+headers = {'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'}
+data = {
+    'grant_type': '',
+    'username': 'bh',
+    'password': 'test',
+    'scope': '',
+    'client_id': '',
+    'client_secret': '',
+}
 
-print(user)
+token_request = requests.post('http://localhost:8000/api/token', headers=headers, data=data)
 
-schemas.User()
+token = token_request.json()
+
+headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer ' + token['access_token']
+}
+
+user_req = requests.get('http://localhost:8000/api/users/me', headers=headers)
+
+print(
+    user_req.status_code,
+    user_req.json()
+)

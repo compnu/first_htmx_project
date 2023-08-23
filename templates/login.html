@@ -5,21 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <script src="https://unpkg.com/htmx.org@1.6.1"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet"> -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
 
     <title>Login</title>
 </head>
 <body>
       <div class="center">
-         <input type="checkbox" id="show">
-         <label for="show" class="show-btn">View Form</label>
+         
          <div class="container">
-            <label for="show" class="close-btn fas fa-times" title="close"></label>
+      
             <div class="text">
-               Login Form
+               <h1>Login Form</h1>
             </div>
             
             <form>
@@ -37,21 +34,19 @@
                <div class="forgot-pass">
                   <a href="#">Forgot Password?</a>
                </div>
-
+               
                <div class="btn">
                   <div class="inner"></div>
-                  <button hx-post="/auth"
-                  hx-target="#auth-info"
-                  >login</button>
-               </div>
+                  <button hx-post="/login"
+                     hx-target="#auth-info">
+                     login
+                  </button>
                
-               <div class="signup-link">
-                  Not a member? <a href="#">Signup now</a>
-               </div>
-            
+               </div>            
             </form>
          
          </div>
+         
       </div>
     
       <p id="auth-info"> {% include 'partials/token.html' %} </p>
