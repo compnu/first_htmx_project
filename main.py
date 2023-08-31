@@ -33,6 +33,8 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/images", StaticFiles(directory="images"), name='images')
+app.mount("/user_image", StaticFiles(directory="user_image"), name='user_image')
 
 templates = Jinja2Templates(directory="templates")
 
@@ -99,7 +101,8 @@ async def login_request(
        context = {'request': request, 'token': access_token}
        return templates.TemplateResponse('/partials/token.html', context=context)
     
-    response = templates.TemplateResponse('index.html', context= {'request': request, 'user': user})
+    image = {'path':'/user_image/'+user.username+'.jpg'}
+    response = templates.TemplateResponse('index.html', context= {'request': request, 'user': user, 'image': image})
     response.headers['HX-Redirect'] = 'http://127.0.0.1:8000/'
     
     await generate_token(response=response, form_data=form, db=db)
@@ -122,7 +125,9 @@ async def movielist(
     films = await crud.get_all_movies(db = db)
     films.reverse()
     
-    context = {"request": request, 'films': films, 'user': user}
+    image = {'path':'/user_image/'+user.username+'.jpg'}
+    
+    context = {"request": request, 'films': films, 'user': user, 'image': image}
     
     if hx_request:
         return templates.TemplateResponse("partials/table.html", context=context)
