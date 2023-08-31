@@ -7,27 +7,24 @@
     
 
     <script src="https://unpkg.com/htmx.org@1.6.1"></script>
-    <link href="{{ url_for('static', path='/index.css') }}" rel="stylesheet">
-    <title>FastAPI demo</title>
+    <link href="{{ url_for('static', path='/table.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', path='/sidebar.css') }}" rel="stylesheet">
+    
+    <title>Movie List</title>
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar" id="sidebar-id">
-        <h3 class="sidebar-header">Menu</h3>
-        <a href="#" class="sidebar-item">Link 1</a>
-        <a href="#" class="sidebar-item">Link 2</a>
-        <a href="#" class="sidebar-item">Link 3</a>
-    </div>
-
-    <div class="mx-4">
-        <h1>Movie List</h1>   
-        
+    <div class="header">
+        {% include 'partials/sidebar.html' %}
+    <h1>Movie List</h1> 
+    <div class="movie-div">
         <table class=movie-table>
             <thead class="movie-table-header">
                 <tr>
                   <th class="border">Film Name</th>
                   <th class="border">Director</th>
                   <th class="border">Action</th>
+                  <th class="border">User</th>
                 </tr>
               </thead>
               <tbody class="movie-table-body" id="table-body" 
@@ -45,15 +42,15 @@
         <form >
             <div class="input-title">
                 <label for="film-title">Title</label>
-                <input type="text" name="title" id="film-title" class="form-control" />
+                <input type="text" name="title" id="film-title" class="form-control" placeholder="Film name"/>
             </div>
         
             <div class="input-director">
                 <label for="film-director">Director</label>
-                <input type="text" name="director" id="film-director" class="form-control" />
+                <input type="text" name="director" id="film-director" class="form-control" placeholder="Director"/>
             </div>
 
-            <button class="px-3 py-1 bg-blue-600 text-white ml-4"
+            <button class="form-btn"
                 hx-post="/add-film/"
                 hx-target="#table-body"
                 hx-swap="afterbegin">
@@ -61,6 +58,7 @@
             </button>
         </form>
     </div>
+</div>
 
 </body>
 </html>

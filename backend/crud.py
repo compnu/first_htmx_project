@@ -112,7 +112,7 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
     
-    user = await get_user_schema(username=token_data.username, db=db)
+    user = await get_user(username=token_data.username, db=db)
     
     if user is None:
         raise credentials_exception

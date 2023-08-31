@@ -34,14 +34,6 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# class NotAuthenticatedException(Exception):
-#     pass
-
-# @app.exception_handler(NotAuthenticatedException)
-# def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
-#     return RedirectResponse(url='/login')
-
-
 templates = Jinja2Templates(directory="templates")
 
 
@@ -125,12 +117,12 @@ async def movielist(
     token = request.cookies.get('access_token')
     
     # Authentication
-    await crud.get_current_user(token=token, db=db)
+    user = await crud.get_current_user(token=token, db=db)
     
     films = await crud.get_all_movies(db = db)
     films.reverse()
     
-    context = {"request": request, 'films': films}
+    context = {"request": request, 'films': films, 'user': user}
     
     if hx_request:
         return templates.TemplateResponse("partials/table.html", context=context)
